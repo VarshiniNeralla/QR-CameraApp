@@ -1,176 +1,224 @@
-{% comment %} <!doctype html>
+{% comment %} <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8" />
-  <title>Upload Photo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: Arial, sans-serif; padding: 16px; }
-    input[type=file] { font-size: 18px; }
-    .info { margin-top: 12px; color: #333; }
-    .preview { margin-top: 12px; max-width: 98vw; }
-    button { margin-top: 8px; padding: 8px 12px; font-size: 16px; }
-  </style>
-</head>
-<body>
-  <h2>Take or choose a photo</h2>
-  <form id="uploadForm" method="post" enctype="multipart/form-data">
-    <input id="fileInput" name="photo" type="file" accept="image/*" capture="environment" />
-    <div>
-      <button type="submit">Upload</button>
-    </div>
-  </form>
-
-  <div class="info" id="status"></div>
-  <img id="preview" class="preview" src="" alt="" />
-
-  <script>
-    const sessionId = "{{ session_id }}";
-    const form = document.getElementById("uploadForm");
-    const fileInput = document.getElementById("fileInput");
-    const status = document.getElementById("status");
-    const preview = document.getElementById("preview");
-
-    fileInput.addEventListener("change", () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-      const url = URL.createObjectURL(file);
-      preview.src = url;
-    });
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const file = fileInput.files[0];
-      if (!file) {
-        status.textContent = "Please pick or take a photo first.";
-        return;
+  <head>
+    <meta charset="utf-8" />
+    <title>Upload Photo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 16px;
       }
-      status.textContent = "Uploading...";
-      const formData = new FormData();
-      formData.append("photo", file);
-      try {
-        const res = await fetch(window.location.href, { method: "POST", body: formData });
-        if (res.ok) {
-          const json = await res.json();
-          status.textContent = "Uploaded. Returning to receiver.";
-          // optional: close tab automatically
-          // window.close();
-        } else {
-          status.textContent = "Upload failed.";
+      input[type="file"] {
+        font-size: 18px;
+      }
+      .info {
+        margin-top: 12px;
+        color: #333;
+      }
+      .preview {
+        margin-top: 12px;
+        max-width: 98vw;
+      }
+      button {
+        margin-top: 8px;
+        padding: 8px 12px;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Take or choose a photo</h2>
+    <form id="uploadForm" method="post" enctype="multipart/form-data">
+      <input
+        id="fileInput"
+        name="photo"
+        type="file"
+        accept="image/*"
+        capture="environment"
+      />
+      <div>
+        <button type="submit">Upload</button>
+      </div>
+    </form>
+
+    <div class="info" id="status"></div>
+    <img id="preview" class="preview" src="" alt="" />
+
+    <script>
+      const sessionId = "{{ session_id }}";
+      const form = document.getElementById("uploadForm");
+      const fileInput = document.getElementById("fileInput");
+      const status = document.getElementById("status");
+      const preview = document.getElementById("preview");
+
+      fileInput.addEventListener("change", () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        preview.src = url;
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const file = fileInput.files[0];
+        if (!file) {
+          status.textContent = "Please pick or take a photo first.";
+          return;
         }
-      } catch (err) {
-        status.textContent = "Upload error.";
-      }
-    });
+        status.textContent = "Uploading...";
+        const formData = new FormData();
+        formData.append("photo", file);
+        try {
+          const res = await fetch(window.location.href, {
+            method: "POST",
+            body: formData,
+          });
+          if (res.ok) {
+            const json = await res.json();
+            status.textContent = "Uploaded. Returning to receiver.";
+            // optional: close tab automatically
+            // window.close();
+          } else {
+            status.textContent = "Upload failed.";
+          }
+        } catch (err) {
+          status.textContent = "Upload error.";
+        }
+      });
 
-    // auto open camera on page load on some browsers
-    // set a small timeout to allow page rendering
-    setTimeout(() => {
-      // some mobile browsers will not allow programmatic click without user gesture
-      // so we do not force it. The user can tap the file input.
-    }, 300);
-  </script>
-</body>
-</html> {% endcomment %}
-
+      // auto open camera on page load on some browsers
+      // set a small timeout to allow page rendering
+      setTimeout(() => {
+        // some mobile browsers will not allow programmatic click without user gesture
+        // so we do not force it. The user can tap the file input.
+      }, 300);
+    </script>
+  </body>
+</html>
+{% endcomment %}
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Upload Image</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #f8f8f8;
-      color: #222;
-      margin: 0;
-      padding: 30px;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <title>Upload Image</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #f8f8f8;
+        color: #222;
+        margin: 0;
+        padding: 30px;
+      }
 
-    h1 {
-      font-size: 22px;
-      margin-bottom: 20px;
-    }
+      h1 {
+        font-size: 22px;
+        margin-bottom: 20px;
+      }
 
-    form {
-      margin-top: 20px;
-    }
+      form {
+        margin-top: 20px;
+      }
 
-    input[type="file"] {
-      display: none;
-    }
+      input[type="file"] {
+        display: none;
+      }
 
-    label {
-      display: inline-block;
-      padding: 12px 25px;
-      background-color: #007bff;
-      color: white;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 16px;
-    }
+      label {
+        display: inline-block;
+        padding: 12px 25px;
+        background-color: #007bff;
+        color: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+      }
 
-    #status {
-      margin-top: 15px;
-      font-size: 16px;
-    }
+      #status {
+        margin-top: 15px;
+        font-size: 16px;
+      }
 
-    img.preview {
-      margin-top: 20px;
-      width: 90%;
-      border-radius: 8px;
-      display: none;
-    }
-  </style>
-</head>
-<body>
-  <h1>Take a Photo to Upload</h1>
+      img.preview {
+        margin-top: 20px;
+        width: 90%;
+        border-radius: 8px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Take a Photo to Upload</h1>
 
-  <form id="uploadForm" enctype="multipart/form-data">
-    <input type="file" id="photo" name="photo" accept="image/*" capture="environment">
-    <label for="photo">Open Camera</label>
-  </form>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input
+        type="file"
+        id="photo"
+        name="photo"
+        accept="image/*"
+        capture="environment"
+      />
+      <label for="photo">Open Camera</label>
+    </form>
 
-  <div id="status"></div>
-  <img id="preview" class="preview" alt="Preview">
+    <div id="status"></div>
+    <img id="preview" class="preview" alt="Preview" />
 
-  <script>
-    const uploadForm = document.getElementById('uploadForm');
-    const photoInput = document.getElementById('photo');
-    const statusDiv = document.getElementById('status');
-    const previewImg = document.getElementById('preview');
+    <script>
+      const photoInput = document.getElementById("photo");
+      const statusDiv = document.getElementById("status");
+      const previewImg = document.getElementById("preview");
 
-    photoInput.addEventListener('change', async () => {
-      const file = photoInput.files[0];
-      if (!file) return;
+      photoInput.addEventListener("change", async () => {
+        const file = photoInput.files[0];
+        if (!file) return;
 
-      // Show preview
-      previewImg.src = URL.createObjectURL(file);
-      previewImg.style.display = 'block';
-      statusDiv.textContent = "Uploading...";
+        previewImg.src = URL.createObjectURL(file);
+        previewImg.style.display = "block";
+        statusDiv.textContent = "Compressing...";
 
-      const formData = new FormData();
-      formData.append("photo", file);
-
-      try {
-        const response = await fetch(window.location.href, {
-          method: "POST",
-          body: formData
+        // Compress the image before upload
+        const resizedBlob = await new Promise((resolve) => {
+          const img = document.createElement("img");
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            img.src = e.target.result;
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              const scale = 0.4; // reduce image size to 40%
+              canvas.width = img.width * scale;
+              canvas.height = img.height * scale;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              canvas.toBlob(resolve, "image/jpeg", 0.7); // 70% quality
+            };
+          };
+          reader.readAsDataURL(file);
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          statusDiv.textContent = "✅ Uploaded successfully";
-        } else {
-          statusDiv.textContent = "❌ Upload failed";
+        const formData = new FormData();
+        formData.append("photo", resizedBlob, "compressed.jpg");
+
+        statusDiv.textContent = "Uploading...";
+
+        try {
+          const response = await fetch(window.location.href, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok) {
+            statusDiv.textContent = "✅ Uploaded successfully";
+          } else {
+            statusDiv.textContent = "❌ Upload failed";
+          }
+        } catch (err) {
+          statusDiv.textContent = "⚠️ Error connecting to server";
         }
-      } catch (err) {
-        statusDiv.textContent = "⚠️ Error connecting to server";
-      }
-    });
-  </script>
-</body>
+      });
+    </script>
+  </body>
 </html>
