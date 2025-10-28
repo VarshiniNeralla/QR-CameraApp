@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Live Photo Receiver</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    .qr { margin-bottom: 16px; }
+    .preview { width: 600px; max-width: 90vw; border: 1px solid #ccc; padding: 8px; }
+    .note { color: #444; font-size: 14px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h2>Live Photo Receiver</h2>
+  <div>
+    <strong>Scan this QR with your phone camera</strong>
+    <div class="qr">
+      <img src="{{ qr_datauri }}" alt="QR code" />
+    </div>
+    <div class="note">If the phone cannot open the link, open: <code>{{ request.url_root.rstrip("/") + url_for('upload_page', session_id=session_id) }}</code></div>
+  </div>
+
+  <hr/>
+
+  <h3>Latest image</h3>
+  <div>
+    <img id="liveImg" class="preview" src="" alt="No image yet" />
+  </div>
+
+  <script>
+    const sessionId = "{{ session_id }}";
+    const socket = io();
+
+    socket.on("connect", () => {
+      socket.emit("join", { room: sessionId });
+    });
+
+    socket.on("new_image", (data) => {
+      const img = document.getElementById("liveImg");
+      // add cache buster
+      img.src = data.image_url + "?t=" + new Date().getTime();
+    });
+
+    // optional: poll to fetch existing image on load
+    (async function loadExisting(){
+      const url = "/static/uploads/" + sessionId + ".jpg";
+      try {
+        const res = await fetch(url, { method: "HEAD" });
+        if (res.ok) {
+          document.getElementById("liveImg").src = url;
+        }
+      } catch(e){}
+    })();
+  </script>
+</body>
+</html>
