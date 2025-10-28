@@ -1,119 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Upload Image</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        background-color: #f8f8f8;
-        color: #222;
-        margin: 0;
-        padding: 30px;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <title>PixPocket Upload</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg: #fffafc;
+      --muted: #7b6f7a;
+      --accent: #ffd7ef;
+    }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Roboto, Arial;
+      background: linear-gradient(180deg, var(--bg), #fffdf8);
+      color:#3b2f36;
+      padding:22px;
+    }
+    .container{
+      max-width:640px;
+      margin:0 auto;
+      text-align:center;
+    }
+    h1 { margin: 10px 0; font-size:20px; }
+    p.note { color:var(--muted); font-size:14px; }
 
-      h1 {
-        font-size: 22px;
-        margin-bottom: 20px;
-      }
+    .buttons { display:flex; gap:12px; justify-content:center; margin-top:16px; flex-wrap:wrap; }
 
-      input[type="file"] {
-        display: none;
-      }
+    .bigbtn {
+      background: linear-gradient(90deg,#ffd1e8,#d7e9ff);
+      border:none;
+      padding:12px 18px;
+      border-radius:14px;
+      box-shadow: 0 10px 25px rgba(99,80,114,0.06);
+      font-weight:700;
+      cursor:pointer;
+      min-width:160px;
+    }
 
-      label {
-        display: inline-block;
-        padding: 12px 25px;
-        background-color: #007bff;
-        color: white;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 16px;
-      }
+    .preview {
+      margin-top:18px;
+      border-radius:12px;
+      box-shadow: 0 8px 20px rgba(59,47,54,0.06);
+      overflow:hidden;
+      display:none;
+    }
+    .preview img { width:100%; height:auto; display:block; }
 
-      #status {
-        margin-top: 15px;
-        font-size: 16px;
-      }
+    .status { margin-top:12px; color:var(--muted); font-size:14px; }
 
-      img.preview {
-        margin-top: 20px;
-        width: 90%;
-        border-radius: 8px;
-        display: none;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Take a Photo to Upload</h1>
+    /* hide file inputs visually */
+    input[type="file"] { display:none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PixPocket Upload</h1>
+    <p class="note">Take a photo or choose from gallery. We compress the image to save time.</p>
 
-    <form id="uploadForm" enctype="multipart/form-data">
-      <input
-        type="file"
-        id="photo"
-        name="photo"
-        accept="image/*"
-        capture="environment"
-      />
-      <label for="photo">Open Camera</label>
-    </form>
+    <div class="buttons">
+      <label class="bigbtn" for="cameraInput">Take Photo</label>
+      <label class="bigbtn" for="galleryInput">Choose from Gallery</label>
+    </div>
 
-    <div id="status"></div>
-    <img id="preview" class="preview" alt="Preview" />
+    <!-- camera input triggers phone camera -->
+    <input id="cameraInput" type="file" accept="image/*" capture="environment" />
+    <!-- gallery input opens gallery picker -->
+    <input id="galleryInput" type="file" accept="image/*" />
 
-    <script>
-      const photoInput = document.getElementById("photo");
-      const statusDiv = document.getElementById("status");
-      const previewImg = document.getElementById("preview");
+    <div class="preview" id="previewBox">
+      <img id="previewImg" alt="preview" />
+    </div>
 
-      photoInput.addEventListener("change", async () => {
-        const file = photoInput.files[0];
-        if (!file) return;
+    <div class="status" id="status">Waiting for image</div>
+  </div>
 
-        // Preview the image
-        previewImg.src = URL.createObjectURL(file);
-        previewImg.style.display = "block";
-        statusDiv.textContent = "Uploading...";
+  <script>
+    const cameraInput = document.getElementById('cameraInput');
+    const galleryInput = document.getElementById('galleryInput');
+    const status = document.getElementById('status');
+    const previewBox = document.getElementById('previewBox');
+    const previewImg = document.getElementById('previewImg');
 
-        // Compress before upload
-        const resizedBlob = await new Promise((resolve) => {
-          const img = document.createElement("img");
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            img.src = e.target.result;
-            img.onload = () => {
-              const canvas = document.createElement("canvas");
-              const scale = 0.5; // scale down to 50%
-              canvas.width = img.width * scale;
-              canvas.height = img.height * scale;
-              const ctx = canvas.getContext("2d");
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-              canvas.toBlob(resolve, "image/jpeg", 0.7); // 70% quality
-            };
-          };
-          reader.readAsDataURL(file);
-        });
+    const uploadUrl = window.location.href;
 
-        const formData = new FormData();
-        formData.append("photo", resizedBlob, "compressed.jpg");
+    async function handleFile(file){
+      if(!file) return;
+      status.textContent = 'Preparing image...';
 
-        try {
-          const response = await fetch(window.location.href, {
-            method: "POST",
-            body: formData,
-          });
+      // compress image using canvas
+      const compressedBlob = await compressImage(file, 0.7, 0.6); // quality and scale
+      previewImg.src = URL.createObjectURL(compressedBlob);
+      previewBox.style.display = 'block';
+      status.textContent = 'Uploading...';
 
-          if (response.ok) {
-            statusDiv.textContent = "✅ Uploaded successfully";
-          } else {
-            statusDiv.textContent = "❌ Upload failed";
-          }
-        } catch (err) {
-          statusDiv.textContent = "⚠️ Error connecting to server";
+      const fd = new FormData();
+      fd.append('photo', compressedBlob, file.name || 'photo.jpg');
+
+      try {
+        const res = await fetch(uploadUrl, { method: 'POST', body: fd });
+        if(res.ok){
+          status.textContent = 'Uploaded successfully';
+          // optionally close the tab automatically: window.close()
+        } else {
+          status.textContent = 'Upload failed';
         }
+      } catch(err){
+        status.textContent = 'Network error';
+      }
+    }
+
+    cameraInput.addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      handleFile(f);
+    });
+
+    galleryInput.addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      handleFile(f);
+    });
+
+    // compress function: returns a Blob
+    function compressImage(file, quality=0.7, scale=0.6){
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            canvas.toBlob((blob) => {
+              if(blob) resolve(blob);
+              else reject(new Error('Compression failed'));
+            }, 'image/jpeg', quality);
+          };
+          img.onerror = (e) => reject(e);
+          img.src = ev.target.result;
+        };
+        reader.onerror = (e) => reject(e);
+        reader.readAsDataURL(file);
       });
-    </script>
-  </body>
+    }
+  </script>
+</body>
 </html>

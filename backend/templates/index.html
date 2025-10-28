@@ -1,63 +1,323 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Live Image Upload</title>
+  <meta charset="UTF-8" />
+  <title>PixPocket — Live Gallery</title>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    /* Cute pastel theme */
+    :root{
+      --bg: #fffafc;
+      --card: #ffffff;
+      --muted: #7b6f7a;
+      --accent1: #f7d7f0; /* pale pink */
+      --accent2: #dbeaf7; /* pale blue */
+      --accent3: #eaf7e6; /* pale green */
+      --accent4: #fbeed9; /* pale peach */
+      --shadow: 0 6px 18px rgba(99,80,114,0.06);
+    }
+    html,body{height:100%;}
     body {
-      font-family: Arial, sans-serif;
-      margin: 30px;
-      background-color: #fafafa;
-      color: #222;
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg, var(--bg), #fffdf8);
+      color: #3b2f36;
+      padding: 28px;
     }
 
-    h1 {
-      font-size: 22px;
-      margin-bottom: 10px;
+    .top {
+      display:flex;
+      gap:20px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
     }
 
-    #qr {
-      margin: 20px 0;
+    .brand {
+      display:flex;
+      gap:14px;
+      align-items:center;
     }
 
+    .logo {
+      width:62px;
+      height:62px;
+      background: radial-gradient(circle at 30% 30%, var(--accent1), var(--accent2));
+      border-radius:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow: var(--shadow);
+      font-weight:700;
+      color:#6b3b63;
+      font-size:22px;
+    }
+
+    .title {
+      line-height:1;
+    }
+    .title h1 { margin:0; font-size:20px; letter-spacing: -0.2px; }
+    .title p { margin:0; color:var(--muted); font-size:13px; }
+
+    .controls {
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+
+    .btn {
+      background:#fff;
+      border: none;
+      padding:10px 14px;
+      border-radius:10px;
+      box-shadow: var(--shadow);
+      cursor:pointer;
+      font-weight:600;
+    }
+
+    .btn.primary {
+      background: linear-gradient(90deg, #ffd1e8, #d7e9ff);
+      color: #3b2f36;
+    }
+
+    .card {
+      margin-top:18px;
+      background:var(--card);
+      border-radius:12px;
+      padding:18px;
+      box-shadow: var(--shadow);
+    }
+
+    .qr-wrap {
+      display:flex;
+      gap:18px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .qr-box {
+      width:160px;
+      height:160px;
+      border-radius:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(180deg,#fff,#fff);
+      padding:12px;
+      box-shadow: 0 10px 30px rgba(99,80,114,0.03);
+    }
+
+    .session {
+      color:var(--muted);
+      font-size:13px;
+      word-break:break-all;
+    }
+
+    /* gallery */
     #gallery {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 20px;
+      margin-top:18px;
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap:14px;
     }
 
-    #gallery img {
-      width: 250px;
-      border: 2px solid #ddd;
-      border-radius: 6px;
-      object-fit: cover;
+    .photo {
+      position:relative;
+      background:linear-gradient(180deg,#fff,#fff);
+      border-radius:12px;
+      overflow:hidden;
+      box-shadow: 0 8px 20px rgba(59,47,54,0.06);
+      border:1px solid rgba(220,210,220,0.5);
+    }
+    .photo img {
+      width:100%;
+      height:180px;
+      object-fit:cover;
+      display:block;
+    }
+    .meta {
+      padding:10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+    .ts { font-size:13px; color:var(--muted); }
+    .photo .actions {
+      position:absolute;
+      right:8px;
+      top:8px;
+      display:flex;
+      gap:6px;
+    }
+    .icon {
+      background: rgba(255,255,255,0.9);
+      border-radius:8px;
+      padding:6px;
+      cursor:pointer;
+      box-shadow: 0 4px 12px rgba(99,80,114,0.06);
+    }
+
+    .note {
+      color:var(--muted);
+      font-size:13px;
+      margin-top:8px;
     }
   </style>
 </head>
 <body>
-  <h1>Scan this QR to upload photos</h1>
-  <div id="qr">
-    <img src="{{ qr_datauri }}" alt="QR Code">
-  </div>
-  <p><strong>Session ID:</strong> {{ session_id }}</p>
+  <div class="top">
+    <div class="brand">
+      <div class="logo">PP</div>
+      <div class="title">
+        <h1>PixPocket</h1>
+        <p>Scan to share photos live</p>
+      </div>
+    </div>
 
-  <h2>Live Gallery</h2>
-  <div id="gallery"></div>
+    <div class="controls">
+      <button id="downloadAll" class="btn primary">Download All</button>
+      <button id="refreshBtn" class="btn">Refresh</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="qr-wrap">
+      <div class="qr-box">
+        <img src="{{ qr_datauri }}" alt="qr" style="width:100%; height:100%; object-fit:contain;" />
+      </div>
+      <div>
+        <div style="font-weight:700">Scan this QR with your phone</div>
+        <div class="session">Session: <span id="sid">{{ session_id }}</span></div>
+        <div class="note">If QR fails, open: <code style="background:#fff0f7;padding:4px;border-radius:6px;">{{ url_for('upload_page', session_id=session_id, _external=True) }}</code></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 10px 0">Live Gallery</h3>
+    <div id="gallery">Loading...</div>
+    <div class="note">New images appear at the top automatically.</div>
+  </div>
 
   <script>
-    const socket = io();
     const sessionId = "{{ session_id }}";
+    const gallery = document.getElementById('gallery');
+    const socket = io();
 
-    socket.emit("join", { room: sessionId });
-
-    socket.on("new_image", data => {
-      const img = document.createElement("img");
-      img.src = data.image_url;
-      img.alt = "Uploaded Image";
-      document.getElementById("gallery").prepend(img);
+    // join the session room
+    socket.on('connect', () => {
+      socket.emit('join', { room: sessionId });
     });
+
+    // helper to format timestamp from filename
+    function filenameToTs(name){
+      // name = <session>_<YYYYmmdd_HHMMSS_ffffff>.ext
+      try {
+        const parts = name.split('_');
+        if(parts.length < 2) return '';
+        const ts = parts[1] + (parts[2] ? '_' + parts[2].split('.').shift() : '');
+        // try to parse YYYYmmdd_HHMMSS
+        const datepart = ts.split('_').slice(0,2).join('_');
+        // fallback: return raw
+        return datepart;
+      } catch(e){ return '';}
+    }
+
+    function addPhoto(url, prepend=true){
+      const card = document.createElement('div');
+      card.className = 'photo';
+
+      const img = document.createElement('img');
+      img.src = url;
+
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+
+      const dl = document.createElement('div');
+      dl.className = 'icon';
+      dl.title = 'Download image';
+      dl.innerHTML = '⬇';
+      dl.onclick = () => {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      };
+
+      actions.appendChild(dl);
+      card.appendChild(actions);
+      card.appendChild(img);
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const ts = document.createElement('div');
+      ts.className = 'ts';
+      // extract filename from url
+      const parts = url.split('/');
+      const fname = parts[parts.length -1];
+      ts.textContent = filenameToTs(fname);
+      meta.appendChild(ts);
+
+      card.appendChild(meta);
+
+      if(prepend && gallery.firstChild){
+        gallery.insertBefore(card, gallery.firstChild);
+      } else {
+        gallery.appendChild(card);
+      }
+    }
+
+    // When new image arrives via websocket
+    socket.on('new_image', (data) => {
+      // cache buster to avoid stale reads
+      addPhoto(data.image_url + '?t=' + new Date().getTime(), true);
+    });
+
+    // load existing images for session
+    async function loadExisting(){
+      gallery.innerHTML = '';
+      try {
+        const res = await fetch('/list_images/' + sessionId);
+        if(!res.ok) throw new Error('no images');
+        const j = await res.json();
+        const images = j.images || [];
+        if(images.length === 0){
+          gallery.innerHTML = '<div style="color:var(--muted)">No images yet. Scan the QR to upload.</div>';
+        } else {
+          images.forEach(url => addPhoto(url, false));
+        }
+      } catch(e){
+        gallery.innerHTML = '<div style="color:var(--muted)">Unable to load images.</div>';
+      }
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', loadExisting);
+
+    document.getElementById('downloadAll').addEventListener('click', async () => {
+      try {
+        const res = await fetch('/download/' + sessionId);
+        if(!res.ok) throw new Error('no images');
+        // create link to the zip response
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = sessionId + '_images.zip';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch(err){
+        alert('No images to download or network error.');
+      }
+    });
+
+    // initial load
+    loadExisting();
   </script>
 </body>
 </html>
