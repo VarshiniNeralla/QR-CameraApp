@@ -1,4 +1,4 @@
-<!doctype html>
+{% comment %} <!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -52,6 +52,73 @@
         }
       } catch(e){}
     })();
+  </script>
+</body>
+</html> {% endcomment %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Live Image Upload</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background-color: #fafafa;
+      color: #222;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    #qr {
+      margin: 20px 0;
+    }
+
+    #gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    #gallery img {
+      width: 250px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+  <h1>Scan this QR to upload photos</h1>
+  <div id="qr">
+    <img src="{{ qr_datauri }}" alt="QR Code">
+  </div>
+  <p><strong>Session ID:</strong> {{ session_id }}</p>
+
+  <h2>Live Gallery</h2>
+  <div id="gallery"></div>
+
+  <script>
+    const socket = io();
+    const sessionId = "{{ session_id }}";
+
+    // Join session room
+    socket.emit("join", { room: sessionId });
+
+    // When a new image arrives, add it to gallery
+    socket.on("new_image", data => {
+      const img = document.createElement("img");
+      img.src = data.image_url;
+      img.alt = "Uploaded Image";
+      document.getElementById("gallery").prepend(img);
+    });
   </script>
 </body>
 </html>

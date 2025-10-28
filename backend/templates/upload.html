@@ -1,4 +1,4 @@
-<!doctype html>
+{% comment %} <!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -69,6 +69,108 @@
       // some mobile browsers will not allow programmatic click without user gesture
       // so we do not force it. The user can tap the file input.
     }, 300);
+  </script>
+</body>
+</html> {% endcomment %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload Image</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f8f8f8;
+      color: #222;
+      margin: 0;
+      padding: 30px;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    form {
+      margin-top: 20px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    label {
+      display: inline-block;
+      padding: 12px 25px;
+      background-color: #007bff;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-size: 16px;
+    }
+
+    img.preview {
+      margin-top: 20px;
+      width: 90%;
+      border-radius: 8px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Take a Photo to Upload</h1>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" id="photo" name="photo" accept="image/*" capture="environment">
+    <label for="photo">Open Camera</label>
+  </form>
+
+  <div id="status"></div>
+  <img id="preview" class="preview" alt="Preview">
+
+  <script>
+    const uploadForm = document.getElementById('uploadForm');
+    const photoInput = document.getElementById('photo');
+    const statusDiv = document.getElementById('status');
+    const previewImg = document.getElementById('preview');
+
+    photoInput.addEventListener('change', async () => {
+      const file = photoInput.files[0];
+      if (!file) return;
+
+      // Show preview
+      previewImg.src = URL.createObjectURL(file);
+      previewImg.style.display = 'block';
+      statusDiv.textContent = "Uploading...";
+
+      const formData = new FormData();
+      formData.append("photo", file);
+
+      try {
+        const response = await fetch(window.location.href, {
+          method: "POST",
+          body: formData
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          statusDiv.textContent = "✅ Uploaded successfully";
+        } else {
+          statusDiv.textContent = "❌ Upload failed";
+        }
+      } catch (err) {
+        statusDiv.textContent = "⚠️ Error connecting to server";
+      }
+    });
   </script>
 </body>
 </html>
