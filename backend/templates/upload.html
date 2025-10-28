@@ -168,6 +168,7 @@
     <img id="preview" class="preview" alt="Preview" />
 
     <script>
+      const uploadForm = document.getElementById("uploadForm");
       const photoInput = document.getElementById("photo");
       const statusDiv = document.getElementById("status");
       const previewImg = document.getElementById("preview");
@@ -176,11 +177,13 @@
         const file = photoInput.files[0];
         if (!file) return;
 
+        // Show preview
         previewImg.src = URL.createObjectURL(file);
         previewImg.style.display = "block";
-        statusDiv.textContent = "Compressing...";
+        statusDiv.textContent = "Uploading...";
 
-        // Compress the image before upload
+        const formData = new FormData();
+        // Replace in upload.html just before formData.append()
         const resizedBlob = await new Promise((resolve) => {
           const img = document.createElement("img");
           const reader = new FileReader();
@@ -188,7 +191,7 @@
             img.src = e.target.result;
             img.onload = () => {
               const canvas = document.createElement("canvas");
-              const scale = 0.4; // reduce image size to 40%
+              const scale = 0.4; // reduce to 40% size
               canvas.width = img.width * scale;
               canvas.height = img.height * scale;
               const ctx = canvas.getContext("2d");
@@ -198,11 +201,9 @@
           };
           reader.readAsDataURL(file);
         });
-
-        const formData = new FormData();
         formData.append("photo", resizedBlob, "compressed.jpg");
 
-        statusDiv.textContent = "Uploading...";
+        formData.append("photo", file);
 
         try {
           const response = await fetch(window.location.href, {
@@ -211,6 +212,7 @@
           });
 
           if (response.ok) {
+            const data = await response.json();
             statusDiv.textContent = "✅ Uploaded successfully";
           } else {
             statusDiv.textContent = "❌ Upload failed";
